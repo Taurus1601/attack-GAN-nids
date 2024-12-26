@@ -1,101 +1,174 @@
-import Image from "next/image";
+"use client";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/app/comps/theme-toggle";
+import { HoverCardDemo } from "./comps/hover";
+import { GenerateAttack } from "./api";
+import { Chart } from "./comps/piechart";
+import { Slider } from "@/components/ui/slider";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardTitle,
+} from "../components/ui/card";
+import { ComboboxGAN } from "./comps/gan_options";
+
+import Dataset from "./comps/dataset";
+import { ComboboxNIDS } from "./comps/nids_option";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [joblibPrediction, setJoblibPrediction] = useState(null);
+  const [sliderValue, setSliderValue] = useState([100]);
+  const [toggleState, setToggleState] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+
+  const HandleGeneration = async () => {
+    try {
+      const prediction = await GenerateAttack(sliderValue);
+      setJoblibPrediction(prediction);
+    } catch (error) {
+      console.error("Error making joblib prediction:", error);
+    }
+  };
+
+  return (
+    <div className={toggleState ? "blur-sm bg-black/30" : ""}>
+      <div className="text-2xl font-bold text-center relative m-10">
+        <h1>Attack-GAN Dashboard</h1>
+        <span className="absolute right-0 top-0">
+          <ModeToggle />
+        </span>
+      </div>
+      <div className="grid grid-cols-2 ">
+        <div className="p-4 left-side">
+          {/* <HoverCardDemo /> */}
+          <div className="grid grid-row-2 gap-4 ">
+            <Chart name={"ids evaluation"} data={joblibPrediction} />
+
+            {/* <Chart name={'type of attack'} data={null}/> */}
+
+            <Card className="flex flex-col p-5 m-4">
+              <CardContent>
+                <CardTitle>Confusion Matrix</CardTitle>
+                <CardDescription>
+                  <table className="table-auto w-full mt-4">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2"></th>
+                        <th className="px-4 py-2">Predicted benign</th>
+                        <th className="px-4 py-2">Predicted attack</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="border px-4 py-2">Actual benign</td>
+                        <td className="border px-4 py-2">
+                          {joblibPrediction
+                            ? joblibPrediction.matrix[0][0]
+                            : ""}
+                        </td>
+                        <td className="border px-4 py-2">
+                          {joblibPrediction
+                            ? joblibPrediction.matrix[0][1]
+                            : ""}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border px-4 py-2">Actual attack</td>
+                        <td className="border px-4 py-2">
+                          {joblibPrediction
+                            ? joblibPrediction.matrix[1][0]
+                            : ""}
+                        </td>
+                        <td className="border px-4 py-2">
+                          {joblibPrediction
+                            ? joblibPrediction.matrix[1][1]
+                            : ""}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <Card className="flex flex-col p-5 m-4 right-side">
+          <CardContent>
+            <div className="p-1 -mb-14 right-side gap-10 grid grid-rows-4 ">
+              <span className="p-3 ">
+                
+                <CardTitle className="text-2xl font-serif m-3">
+                Attack-GAN Model :
+                </CardTitle>
+                  
+                
+                <ComboboxGAN />
+              </span>
+              <span className="p-3 relative">
+                <CardTitle className="text-2xl font-serif m-3">
+                  Number of samples to generate <span className="ml-[15vw] text-xl">{sliderValue}</span>
+                </CardTitle>
+                           
+                <Slider 
+                  defaultValue={sliderValue} 
+                  max={10000} 
+                  step={1} 
+                  onValueChange={(value) => setSliderValue(value)} 
+                />
+                <span className="absolute top-24 text-xl">0</span>
+                <span className="absolute top-24 right-1 text-xl">10000</span>
+              </span>
+              <span className="p-3">
+                <CardTitle className="text-2xl font-serif m-3">
+                  Network - IDS Model:
+                </CardTitle>
+
+                <ComboboxNIDS />
+              </span>
+
+              <span className="flex justify-center gap-4 mt-10 -translate-y-5">
+                <Button onClick={HandleGeneration}>
+                  Generate intrusion Attack
+                </Button>
+
+              <Button onClick={() => setToggleState(!toggleState)}>
+              Train Model
+              </Button>
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      {/* <Card className="flex flex-col p-5 m-4 bottom-dataset">
+        <CardContent>
+          <CardTitle>Metrics</CardTitle>
+          <CardDescription>
+            <Dataset />
+          </CardDescription>
+        </CardContent>
+      </Card> */}
+      {/* {toggleState && } */}
     </div>
   );
 }
+
+// const PredictionApp = () => {
+
+//     const [h5Prediction, setH5Prediction] = useState(null);
+
+//     const handleFeaturesChange = (event) => {
+//         setFeatures(event.target.value);
+//     };
+
+//     const handleH5Predict = async () => {
+//         try {
+//             const inputFeatures = features.split(',').map(Number);
+//             const prediction = await predictWithH5(inputFeatures);
+//             setH5Prediction(prediction);
+//         } catch (error) {
+//             console.error('Error making TensorFlow prediction:', error);
+//         }
+//     };
